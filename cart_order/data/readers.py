@@ -12,10 +12,12 @@ def validate_headers(headers):
         raise Exception(msg)
 
 
-def read_csv(path: str, username: str) -> None:
+def read_csv(path: str, username: str) -> list:
     """
-    Read a CSV and put the results into a database corresponding to the username
+    Read a CSV and put the results into a database corresponding to the username. Returns the list of items come across
+    in the file.
     """
+    items = list()
     with open(path) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_number = 0
@@ -27,16 +29,23 @@ def read_csv(path: str, username: str) -> None:
                 validate_headers(row)
                 stores = row[len(STARTING_HEADERS):]
                 line_number += 1
-                store_mapping = datastore.ensure_stores(stores)
+                store_mapping = datastore.ensure_stores(stores, username)
                 continue
             item_name, description, price = row[0], row[1], float(row[2])
             for index, store in enumerate(stores):
                 print(row)
-                item = datastore.add_item(item_name, description, price, row[len(STARTING_HEADERS) + index], store, store_mapping)
+                item = datastore.add_item(item_name, description, price, row[len(STARTING_HEADERS) + index], store, store_mapping, username)
                 print(item.name, item.store_id, item.price)
+            items.append(item_name)
             line_number += 1
     
-    print(store_mapping)
+    return items
+
+
+def print_list(items: list, username: str) -> None:
+    """takes in a list of items that the user wants to query, and prints out all stores we have the information for on them"""
+
 
 if __name__ == "__main__":
+    datastore._make_fake_user()
     read_csv("test.csv", datastore.TEMP_USERNAME)

@@ -39,6 +39,7 @@ class Store(Base):
     """Store data about the stores that the customers use. Since users could have different stores, reference them by id"""
     __tablename__ = "store"
     id = Column("id", Integer, primary_key=True, autoincrement=True)
+    user_id = Column("user_id", Integer, ForeignKey("user.id"))
     name = Column("name", String, unique=True)
 
 
@@ -48,6 +49,7 @@ class Item(Base):
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     name = Column("name", String)
     store_id = Column("store_id", Integer, ForeignKey("store.id"))
+    user_id = Column("user_id", Integer, ForeignKey("user.id"))
     description = Column("description", String)
     price = Column("price", Float)
     aisle = Column("aisle", Integer)
@@ -74,34 +76,46 @@ def get_fake_user():
     return _make_fake_user()
 
 
-def make_store(name: str) -> Store:
+def get_user(username: str) -> User:
+    with Session() as session:
+        user = session.query(User).filter_by(username=username).all()
+        if len(user) == 0:
+            raise Exception(f"Could not find user {username} in database")
+        return user[0]
+
+
+def make_store(name: str, user_id: int) -> Store:
     with Session() as session:
         stores = session.query(Store).filter_by(name=name).all()
         if len(stores) > 0:
             print(f"Store {name} already exists, not creating")
             return stores[0]
-        store = Store(name=name)
+        store = Store(name=name, user_id=user_id)
         session.add(store)
         return store
 
 
-def ensure_stores(stores: list[str]) -> dict:
+def ensure_stores(stores: list[str], username: str) -> dict:
     """Given a list of store names, ensure they exist in the DB. Returns a mapping of name: id for the purposes of item creation"""
     mapping = dict()
+    user = get_user(username)
+    user_id = user.id
     for store in stores:
-        store_obj = make_store(store)
+        store_obj = make_store(store, user_id)
         mapping[store] = store_obj.id
     return mapping
 
 
-def add_item(name: str, description: str, price: float, aisle: int, store_name: str, store_mappings: dict) -> Item:
+def add_item(name: str, description: str, price: float, aisle: int, store_name: str, store_mappings: dict, username: str) -> Item:
     with Session() as session:
+        user = get_user(username)
+        user_id = user.id
         store_id = store_mappings.get(store_name)
         items = session.query(Item).filter_by(name=name, store_id=store_id).all()
         if len(items) > 0:
             print("item already exists at store, not creating")
             return items[0]
-        item = Item(name=name, description=description, price=price, store_id=store_id, aisle=aisle)
+        item = Item(name=name, description=description, price=price, store_id=store_id, aisle=aisle, user_id=user_id)
         session.add(item)
         return item
 
