@@ -1,1 +1,4 @@
-Name,Description,Price,Stop_N_Shop,Market_Basket,Shaws
+Name,Description,Price,Quantity,Stop_N_Shop,Market_Basket,Shaws
+Soap,Lavender,3.50,1,11,15,12
+Cabbage,For coleslaw,2.00,3,0,0,0
+Protein Bars,Quest coconut flavor,10,1.50,1,7,3
